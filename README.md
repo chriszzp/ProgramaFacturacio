@@ -1,7 +1,7 @@
 # 💼 Sistema de Facturació
 
 **Versión:** 1.4  
-**Fecha:** Enero 2025
+**Fecha:** Noviembre 2025
 
 ## 📋 Descripción
 
