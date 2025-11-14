@@ -1,0 +1,2 @@
+Bolígraf blau;0.45
+Llibreta A5;2.50

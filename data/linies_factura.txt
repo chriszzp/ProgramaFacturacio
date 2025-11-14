@@ -1,0 +1,9 @@
+F00001;3;Bolígraf blau;0.45
+F00001;2;Llibreta A5;2.50
+F00002;20;PepeFactur;10
+F00003;10;Lapiz;10
+F00004;7;Bolígraf blau;0.45
+F00004;12;Llibreta A5;2.50
+F00005;5;Llibreta A5;2.50
+F00005;5;Bolígraf blau;0.45
+F00005;6;Bolígraf blau;0.45
