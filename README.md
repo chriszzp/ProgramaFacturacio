@@ -226,5 +226,5 @@ Desarrollado como proyecto de Desarrollo de Aplicaciones Multiplataforma
 ---
 
 **Versión:** 1.4  
-**Última actualización:** Enero 2025
+**Última actualización:** Noviembre 2025
 
