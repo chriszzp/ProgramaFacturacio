@@ -26,6 +26,9 @@ public class InvoicesPanel extends JPanel {
     private JTable invoicesTable;
     private DefaultTableModel invoicesModel;
     private JPanel formPanel;
+    private JPanel viewPanel; // Panel para visualizar facturas
+    private JPanel bottomContainer; // Contenedor para formPanel y viewPanel
+    private CardLayout bottomCardLayout; // Para alternar entre form y view
 
     // Formulario
     private JTextField tfClientDni, tfSearchId;
@@ -69,6 +72,10 @@ public class InvoicesPanel extends JPanel {
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         actions.setOpaque(false);
 
+        JButton btnView = new JButton("Veure Factura");
+        AppleStyler.styleButtonSecondary(btnView);
+        btnView.addActionListener(e -> viewSelectedInvoice());
+
         JButton btnNew = new JButton("Nova Factura");
         AppleStyler.styleButtonPrimary(btnNew);
         btnNew.addActionListener(e -> showForm());
@@ -77,6 +84,7 @@ public class InvoicesPanel extends JPanel {
         AppleStyler.styleButtonSecondary(btnRefresh);
         btnRefresh.addActionListener(e -> { refreshInvoicesTable(); updateStatus("Llista actualitzada"); });
 
+        actions.add(btnView);
         actions.add(btnNew);
         actions.add(btnRefresh);
         header.add(actions, BorderLayout.EAST);
@@ -125,6 +133,15 @@ public class InvoicesPanel extends JPanel {
         invoicesTable = new JTable(invoicesModel);
         AppleStyler.styleTable(invoicesTable);
 
+        // Añadir listener de doble clic para abrir la factura
+        invoicesTable.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                if (evt.getClickCount() == 2) {
+                    viewSelectedInvoice();
+                }
+            }
+        });
+
         JScrollPane scroll = new JScrollPane(invoicesTable);
         scroll.setBorder(null);
         tablePanel.add(scroll, BorderLayout.CENTER);
@@ -132,10 +149,23 @@ public class InvoicesPanel extends JPanel {
         topPanel.add(tablePanel, BorderLayout.CENTER);
         content.add(topPanel, BorderLayout.CENTER);
 
-        // Formulario
+        // Contenedor para formulario y visualización (usando CardLayout)
+        bottomCardLayout = new CardLayout();
+        bottomContainer = new JPanel(bottomCardLayout);
+        bottomContainer.setOpaque(false);
+
+        // Formulario de nueva factura
         formPanel = createForm();
-        formPanel.setVisible(false);
-        content.add(formPanel, BorderLayout.SOUTH);
+        bottomContainer.add(formPanel, "FORM");
+
+        // Panel de visualización de factura
+        viewPanel = createViewPanel();
+        bottomContainer.add(viewPanel, "VIEW");
+
+        content.add(bottomContainer, BorderLayout.SOUTH);
+
+        // Ocultar inicialmente el bottomContainer
+        bottomContainer.setVisible(false);
 
         add(content, BorderLayout.CENTER);
     }
@@ -253,6 +283,17 @@ public class InvoicesPanel extends JPanel {
         return card;
     }
 
+    /**
+     * Crea el panel de visualización de facturas
+     */
+    private JPanel createViewPanel() {
+        JPanel card = AppleStyler.createCard();
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setName("viewPanel"); // Para identificarlo
+
+        return card;
+    }
+
     private JLabel createLabel(String text) {
         JLabel label = new JLabel(text);
         label.setFont(AppleStyler.FONT_BODY);
@@ -263,13 +304,20 @@ public class InvoicesPanel extends JPanel {
     private void showForm() {
         clearForm();
         refreshArticlesCombo();
-        formPanel.setVisible(true);
+        bottomCardLayout.show(bottomContainer, "FORM");
+        bottomContainer.setVisible(true); // Mostrar el contenedor
         revalidate();
         repaint();
     }
 
     private void hideForm() {
-        formPanel.setVisible(false);
+        bottomContainer.setVisible(false); // Ocultar el contenedor
+        revalidate();
+        repaint();
+    }
+
+    private void hideViewPanel() {
+        bottomContainer.setVisible(false); // Ocultar el contenedor
         revalidate();
         repaint();
     }
@@ -395,11 +443,40 @@ public class InvoicesPanel extends JPanel {
             return;
         }
 
+        showInvoiceDetails(id);
+    }
+
+    /**
+     * Visualiza la factura seleccionada en la tabla
+     */
+    private void viewSelectedInvoice() {
+        int selectedRow = invoicesTable.getSelectedRow();
+        if (selectedRow == -1) {
+            updateStatus("Selecciona una factura per veure");
+            return;
+        }
+
+        String id = (String) invoicesModel.getValueAt(selectedRow, 0);
+        if (id.equals("(Cap factura)")) {
+            return;
+        }
+
+        showInvoiceDetails(id);
+    }
+
+    /**
+     * Muestra los detalles de una factura en el panel principal
+     */
+    private void showInvoiceDetails(String id) {
         Invoice invoice = invoiceService.find(id);
         if (invoice == null) {
             updateStatus("Factura no trobada");
             return;
         }
+
+        // Buscar información del cliente
+        Client client = clientService.find(invoice.getClientDni());
+        String clientName = client != null ? client.getName() : "Desconegut";
 
         List<InvoiceLine> lines = invoiceService.findLines(id);
 
@@ -411,34 +488,144 @@ public class InvoicesPanel extends JPanel {
         double ivaAmount = base * Double.parseDouble(invoice.getIva()) / 100;
         double total = base + ivaAmount;
 
-        // Mostrar detalles en un diálogo
-        StringBuilder details = new StringBuilder();
-        details.append("Factura ID: ").append(invoice.getId()).append("\n");
-        details.append("Data: ").append(invoice.getDate()).append("\n");
-        details.append("Client DNI: ").append(invoice.getClientDni()).append("\n");
-        details.append("IVA: ").append(invoice.getIva()).append("%\n\n");
-        details.append("Linies:\n");
+        // Limpiar y reconstruir el panel de visualización
+        viewPanel.removeAll();
+        viewPanel.setLayout(new BoxLayout(viewPanel, BoxLayout.Y_AXIS));
+
+        // Título
+        JLabel titleLabel = new JLabel("FACTURA " + id);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        titleLabel.setForeground(AppleStyler.BLUE);
+        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        viewPanel.add(titleLabel);
+        viewPanel.add(Box.createVerticalStrut(20));
+
+        // Información de cabecera
+        JPanel headerPanel = new JPanel(new GridLayout(4, 2, 10, 10));
+        headerPanel.setBackground(AppleStyler.BG_WHITE);
+        headerPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(AppleStyler.BORDER),
+            BorderFactory.createEmptyBorder(15, 15, 15, 15)
+        ));
+        headerPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 150));
+        headerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        headerPanel.add(createBoldLabel("Data:"));
+        headerPanel.add(createValueLabel(invoice.getDate()));
+
+        headerPanel.add(createBoldLabel("DNI Client:"));
+        headerPanel.add(createValueLabel(invoice.getClientDni()));
+
+        headerPanel.add(createBoldLabel("Nom Client:"));
+        headerPanel.add(createValueLabel(clientName));
+
+        headerPanel.add(createBoldLabel("IVA:"));
+        headerPanel.add(createValueLabel(invoice.getIva() + "%"));
+
+        viewPanel.add(headerPanel);
+        viewPanel.add(Box.createVerticalStrut(15));
+
+        // Título de líneas
+        JLabel linesTitle = new JLabel("LÍNIES DE LA FACTURA");
+        linesTitle.setFont(AppleStyler.FONT_SUBTITLE);
+        linesTitle.setForeground(AppleStyler.TEXT_BLACK);
+        linesTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        viewPanel.add(linesTitle);
+        viewPanel.add(Box.createVerticalStrut(10));
+
+        // Tabla de líneas
+        DefaultTableModel linesModel = new DefaultTableModel(
+            new String[]{"Quantitat", "Article", "Preu Unit.", "Total"}, 0) {
+            public boolean isCellEditable(int row, int col) { return false; }
+        };
 
         for (InvoiceLine line : lines) {
             double lineTotal = line.getQuantity() * Double.parseDouble(line.getPrice());
-            details.append(String.format("  %d x %s @ %s EUR = %.2f EUR\n",
-                line.getQuantity(), line.getArticleName(), line.getPrice(), lineTotal));
+            linesModel.addRow(new Object[]{
+                line.getQuantity(),
+                line.getArticleName(),
+                line.getPrice() + " EUR",
+                String.format("%.2f EUR", lineTotal)
+            });
         }
 
-        details.append(String.format("\nBase imponible: %.2f EUR\n", base));
-        details.append(String.format("IVA: %.2f EUR\n", ivaAmount));
-        details.append(String.format("TOTAL: %.2f EUR", total));
+        JTable linesTable = new JTable(linesModel);
+        AppleStyler.styleTable(linesTable);
 
-        JTextArea textArea = new JTextArea(details.toString());
-        textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        textArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(linesTable);
+        scrollPane.setBorder(BorderFactory.createLineBorder(AppleStyler.BORDER));
+        scrollPane.setPreferredSize(new Dimension(Integer.MAX_VALUE, 150));
+        scrollPane.setMaximumSize(new Dimension(Integer.MAX_VALUE, 150));
+        scrollPane.setAlignmentX(Component.LEFT_ALIGNMENT);
+        viewPanel.add(scrollPane);
+        viewPanel.add(Box.createVerticalStrut(15));
 
-        JScrollPane scrollPane = new JScrollPane(textArea);
-        scrollPane.setPreferredSize(new Dimension(400, 300));
+        // Totales
+        JPanel totalsPanel = new JPanel(new GridLayout(3, 2, 10, 8));
+        totalsPanel.setBackground(new Color(240, 248, 255)); // Light blue
+        totalsPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(AppleStyler.BORDER),
+            BorderFactory.createEmptyBorder(15, 15, 15, 15)
+        ));
+        totalsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
+        totalsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JOptionPane.showMessageDialog(this, scrollPane, "Detalls de la Factura", JOptionPane.INFORMATION_MESSAGE);
+        totalsPanel.add(createBoldLabel("Base Imponible:"));
+        totalsPanel.add(createValueLabel(String.format("%.2f EUR", base), SwingConstants.RIGHT));
+
+        totalsPanel.add(createBoldLabel("IVA (" + invoice.getIva() + "%):"));
+        totalsPanel.add(createValueLabel(String.format("%.2f EUR", ivaAmount), SwingConstants.RIGHT));
+
+        totalsPanel.add(createBoldLabel("TOTAL:"));
+        JLabel totalLabel = createValueLabel(String.format("%.2f EUR", total), SwingConstants.RIGHT);
+        totalLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        totalLabel.setForeground(AppleStyler.BLUE);
+        totalsPanel.add(totalLabel);
+
+        viewPanel.add(totalsPanel);
+        viewPanel.add(Box.createVerticalStrut(20));
+
+        // Botón cerrar
+        JButton btnClose = new JButton("Tancar");
+        AppleStyler.styleButtonPrimary(btnClose);
+        btnClose.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btnClose.addActionListener(e -> hideViewPanel());
+        viewPanel.add(btnClose);
+
+        // Mostrar el panel de visualización usando CardLayout
+        bottomCardLayout.show(bottomContainer, "VIEW");
+        bottomContainer.setVisible(true); // Mostrar el contenedor
+        revalidate();
+        repaint();
 
         updateStatus("Factura " + id + " mostrada");
+    }
+
+    /**
+     * Crea una etiqueta en negrita para los campos
+     */
+    private JLabel createBoldLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        label.setForeground(AppleStyler.TEXT_GRAY);
+        return label;
+    }
+
+    /**
+     * Crea una etiqueta de valor
+     */
+    private JLabel createValueLabel(String text) {
+        return createValueLabel(text, SwingConstants.LEFT);
+    }
+
+    /**
+     * Crea una etiqueta de valor con alineación personalizada
+     */
+    private JLabel createValueLabel(String text, int alignment) {
+        JLabel label = new JLabel(text, alignment);
+        label.setFont(AppleStyler.FONT_BODY);
+        label.setForeground(AppleStyler.TEXT_BLACK);
+        return label;
     }
 
     private void refreshInvoicesTable() {

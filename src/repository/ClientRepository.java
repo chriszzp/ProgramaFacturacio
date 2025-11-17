@@ -16,13 +16,20 @@ public class ClientRepository {
         List<Client> res = new ArrayList<>();
         try (BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"))) {
             String line;
+            int lineNumber = 0;
             while ((line = r.readLine()) != null) {
+                lineNumber++;
                 if (line.trim().isEmpty()) continue;
                 Client c = Client.fromCSV(line);
-                if (c != null) res.add(c);
+                if (c != null) {
+                    res.add(c);
+                } else {
+                    System.err.println("Avís: Línia " + lineNumber + " de clients.txt corrupta o invàlida: " + line);
+                }
             }
         } catch (Exception e) {
-            System.err.println("Error leyendo clients: " + e.getMessage());
+            System.err.println("Error llegint clients.txt: " + e.getMessage());
+            e.printStackTrace();
         }
         return res;
     }
@@ -68,6 +75,37 @@ public class ClientRepository {
             return true;
         } catch (Exception e) {
             System.err.println("Error eliminant client: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Actualiza un cliente existente.
+     * Busca por DNI y reemplaza los datos.
+     */
+    public boolean update(String dni, Client newClient) {
+        List<Client> all = findAll();
+        boolean found = false;
+
+        for (int i = 0; i < all.size(); i++) {
+            if (dni.equals(all.get(i).getDni())) {
+                all.set(i, newClient);
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) return false;
+
+        // Reescribir archivo con los datos actualizados
+        try (BufferedWriter w = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, false), "UTF-8"))) {
+            for (Client c : all) {
+                w.write(c.toCSV());
+                w.write(System.lineSeparator());
+            }
+            return true;
+        } catch (Exception e) {
+            System.err.println("Error actualitzant client: " + e.getMessage());
             return false;
         }
     }

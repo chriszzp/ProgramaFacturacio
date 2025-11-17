@@ -1,5 +1,151 @@
 # 📚 DICCIONARIO COMPLETO DEL CÓDIGO - PROGRAMA DE FACTURACIÓ
 
+## ✨ NUEVA FUNCIONALIDAD (v1.6 - 2025-11-17)
+
+### 📄 VISUALIZACIÓN MEJORADA DE FACTURAS
+
+Se ha implementado una funcionalidad completa para visualizar facturas de forma elegante y profesional **en el mismo panel**, sin ventanas emergentes.
+
+#### **3 Formas de Visualizar una Factura:**
+
+1. **🔍 Búsqueda por ID**
+   - Campo de búsqueda en la parte superior
+   - Introduce el ID y pulsa "Buscar"
+   - Los detalles se muestran debajo de la tabla
+
+2. **👆 Botón "Veure Factura"**
+   - Nuevo botón en el header
+   - Selecciona una factura y haz clic
+   - Los detalles se muestran debajo de la tabla
+
+3. **🖱️ Doble clic en la tabla**
+   - Haz doble clic sobre cualquier factura
+   - Los detalles se muestran automáticamente debajo de la tabla
+
+#### **Características del Panel de Visualización:**
+
+✅ **Diseño profesional** estilo Apple  
+✅ **Información completa del cliente** (DNI y nombre)  
+✅ **Tabla de líneas** con cantidad, artículo, precio y total  
+✅ **Panel de totales** destacado:
+  - Base imponible
+  - IVA calculado
+  - Total en grande y azul
+✅ **Se muestra en el mismo panel** - sin ventanas emergentes  
+✅ **Botón "Tancar"** para ocultar  
+
+#### **Archivos Modificados:**
+- `InvoicesPanel.java` - 6 nuevos métodos:
+  - `viewSelectedInvoice()` - Visualiza factura seleccionada
+  - `showInvoiceDetails(String id)` - Muestra detalles en panel
+  - `createViewPanel()` - Crea el panel de visualización
+  - `hideViewPanel()` - Oculta el panel de visualización
+  - `createBoldLabel()` - Helper para etiquetas en negrita
+  - `createValueLabel()` - Helper para valores
+
+#### **Documentación Completa:**
+📖 Ver `docs/VISUALIZACION_FACTURAS_v1.6.md` para más detalles
+
+---
+
+## 🔥 ÚLTIMAS CORRECCIONES (v1.5 - 2025-01-17)
+
+### ✅ FALLOS CORREGIDOS
+
+#### 1. **Espacio vacío en el sidebar - SOLUCIONADO ✓**
+- **Archivo modificado:** `GuiUI.java`
+- **Cambio:** Añadidos gaps de `0` en los `BorderLayout`
+  ```java
+  frame.setLayout(new BorderLayout(0, 0)); // Antes: new BorderLayout()
+  JPanel mainContainer = new JPanel(new BorderLayout(0, 0)); // Antes: new BorderLayout()
+  ```
+- **Resultado:** El sidebar ahora queda pegado al borde izquierdo sin espacios
+
+#### 2. **Validación DNI mejorada - SOLUCIONADO ✓**
+- **Archivo modificado:** `Validation.java`
+- **Antes:** Solo validaba longitud de 9 caracteres
+- **Ahora:** Valida formato español (8 dígitos + letra)
+  ```java
+  // Verifica que los primeros 8 caracteres sean dígitos
+  // Verifica que el último carácter sea una letra
+  ```
+
+#### 3. **Validación teléfono mejorada - SOLUCIONADO ✓**
+- **Archivo modificado:** `Validation.java`
+- **Antes:** Solo validaba 9 dígitos
+- **Ahora:** Valida que empiece por 6, 7, 8 o 9 (teléfonos españoles válidos)
+  ```java
+  char first = phone.charAt(0);
+  return first == '6' || first == '7' || first == '8' || first == '9';
+  ```
+
+#### 4. **Validación precio mejorada - SOLUCIONADO ✓**
+- **Archivo modificado:** `Validation.java`
+- **Antes:** Permitía cualquier número de decimales
+- **Ahora:** Máximo 2 decimales
+  ```java
+  // Verificar máximo 2 decimales
+  if (dotIndex >= 0) {
+      String decimals = price.substring(dotIndex + 1);
+      if (decimals.length() > 2) return false;
+  }
+  ```
+
+#### 5. **Validación campos vacíos - SOLUCIONADO ✓**
+- **Archivos modificados:** `Validation.java`, `ArticleService.java`, `ClientService.java`
+- **Nueva función:** `Validation.notEmpty(String s)` 
+- **Implementado en:**
+  - `ArticleService.addArticle()`: Valida nombre y precio no vacíos
+  - `ClientService.addClient()`: Valida todos los campos no vacíos
+
+#### 6. **Método UPDATE implementado - SOLUCIONADO ✓**
+- **Archivos modificados:**
+  - `ArticleRepository.java` → Nuevo método `update(String oldName, Article newArticle)`
+  - `ClientRepository.java` → Nuevo método `update(String dni, Client newClient)`
+  - `ArticleService.java` → Nuevo método `updateArticle(String oldName, Article newArticle)`
+  - `ClientService.java` → Nuevo método `updateClient(String dni, Client newClient)`
+- **Funcionamiento:**
+  1. Busca el registro existente por clave (nombre o DNI)
+  2. Lo reemplaza con los nuevos datos
+  3. Reescribe el archivo completo
+  4. Aplica todas las validaciones antes de actualizar
+
+#### 7. **Mejor manejo de errores - MEJORADO ✓**
+- **Archivos modificados:** `ArticleRepository.java`, `ClientRepository.java`
+- **Mejoras:**
+  - Logging detallado con número de línea cuando hay datos corruptos
+  - Stack trace completo en caso de excepciones
+  - Mensajes de error en catalán
+  ```java
+  System.err.println("Avís: Línia " + lineNumber + " d'articles.txt corrupta o invàlida: " + line);
+  e.printStackTrace();
+  ```
+
+### 📊 RESUMEN DE CAMBIOS v1.5
+
+| Categoría | Cambio | Estado |
+|-----------|--------|--------|
+| **UX/UI** | Espacio vacío sidebar eliminado | ✅ |
+| **Validaciones** | DNI formato español (8 dígitos + letra) | ✅ |
+| **Validaciones** | Teléfono español (comienza 6/7/8/9) | ✅ |
+| **Validaciones** | Precio máximo 2 decimales | ✅ |
+| **Validaciones** | Campos vacíos no permitidos | ✅ |
+| **Funcionalidad** | Método UPDATE artículos | ✅ |
+| **Funcionalidad** | Método UPDATE clientes | ✅ |
+| **Errores** | Logging mejorado con línea y stack trace | ✅ |
+
+### ⚠️ FALLOS PENDIENTES (No críticos)
+
+#### Moderados:
+- **Archivo theme.txt sin usar:** Existe pero no implementa cambio de tema
+- **Sin validación facturas vacías:** Se pueden crear facturas sin líneas
+
+#### Menores:
+- **Sin sistema de backup:** No hay respaldo automático de datos
+- **Warnings de compilación:** StandardCharsets.UTF_8, empty catch blocks (no afectan funcionalidad)
+
+---
+
 ## 📁 ÍNDICE RÁPIDO
 1. [Estructura del Proyecto](#estructura-del-proyecto)
 2. [Archivos de Datos](#archivos-de-datos)
@@ -947,46 +1093,91 @@ GuiUI (Main)
 
 ## VALIDACIONES (UTIL)
 
-### ✅ **Validation.java**
+### ✅ **Validation.java** - ⚡ ACTUALIZADO v1.5
 **Ubicación:** `src/util/Validation.java`
 
 **Propósito:** Funciones estáticas de validación reutilizables en todo el sistema
 
-**Métodos principales:**
+**🔥 MÉTODOS MEJORADOS EN v1.5:**
 
-**`validDni(String dni)`**: Valida formato DNI
-- Comprueba que tenga exactamente 9 caracteres
+**`validDni(String dni)`**: ✨ **MEJORADO** - Valida formato DNI español
+- ✅ Comprueba que tenga exactamente 9 caracteres
+- ✅ **NUEVO:** Verifica que los primeros 8 sean dígitos
+- ✅ **NUEVO:** Verifica que el último carácter sea una letra
+- ❌ Rechaza: null, longitud ≠ 9, formatos inválidos (ej: "123456789", "AAAAAAAAA")
+- ✅ Acepta: "12345678Z", "87654321A"
 - Retorna boolean
 
-**`validPhone(String phone)`**: Valida número de teléfono
-- Comprueba que tenga exactamente 9 dígitos
-- Verifica que sea numérico
+**`validPhone(String phone)`**: ✨ **MEJORADO** - Valida teléfono español
+- ✅ Comprueba que tenga exactamente 9 dígitos
+- ✅ Verifica que sea numérico
+- ✅ **NUEVO:** Verifica que empiece por 6, 7, 8 o 9 (móviles y fijos españoles)
+- ❌ Rechaza: null, longitud ≠ 9, empezando por 0-5 (ej: "000000000", "111111111")
+- ✅ Acepta: "612345678", "971234567", "834567890"
 - Retorna boolean
 
-**`validCP(String cp)`**: Valida código postal
-- Comprueba que tenga exactamente 5 dígitos
-- Verifica que sea numérico
+**`validCP(String cp)`**: Valida código postal español
+- ✅ Comprueba que tenga exactamente 5 dígitos
+- ✅ Verifica que sea numérico
 - Retorna boolean
 
 **`validLength(String s, int maxLength)`**: Valida longitud máxima
-- Comprueba que el string no supere el límite
+- ✅ Comprueba que el string no supere el límite
+- ✅ Si es null, retorna true (se permite)
 - Útil para validar campos de texto
 - Retorna boolean
 
-**`validPrice(String price)`**: Valida formato de precio
-- Debe ser número decimal válido
-- No puede ser negativo
-- Máximo 6 caracteres (sin punto decimal)
+**`notEmpty(String s)`**: ✨ **NUEVO v1.5** - Valida que no esté vacío
+- ✅ Verifica que el string no sea null
+- ✅ Verifica que no esté vacío después de trim()
+- ❌ Rechaza: null, "", "   "
+- ✅ Acepta: "texto", "  texto  " (quita espacios)
+- Retorna boolean
+- **USO:** Validación obligatoria de campos en formularios
+
+**`validPrice(String price)`**: ✨ **MEJORADO** - Valida formato de precio
+- ✅ Debe ser número decimal válido
+- ✅ No puede ser negativo
+- ✅ Máximo 6 caracteres (sin contar el punto decimal)
+- ✅ **NUEVO:** Máximo 2 decimales permitidos
+- ❌ Rechaza: null, "", "abc", "-5", "1234.567" (3 decimales), "1234567" (7 dígitos)
+- ✅ Acepta: "0.45", "123.99", "1000", "1.5"
 - Retorna boolean
 
 **`validQuantity(String qty)`**: Valida cantidad
-- Debe ser número entero entre 1 y 9999
+- ✅ Debe ser número entero entre 1 y 9999
+- ❌ Rechaza: null, "0", "-1", "10000", "abc"
+- ✅ Acepta: "1", "50", "9999"
 - Retorna boolean
+
+**`noForbiddenChars(String s)`**: Valida caracteres prohibidos
+- ✅ Verifica que no contenga el carácter `;` (punto y coma)
+- ⚠️ **RAZÓN:** El separador CSV es `;`, permitirlo rompe el formato
+- Si es null, retorna true
+- ❌ Rechaza: "Hola;Adiós", "Texto; con punto y coma"
+- ✅ Acepta: "Hola", "Texto normal", null
+- Retorna boolean
+
+### 📋 RESUMEN DE VALIDACIONES v1.5
+
+| Función | Antes | Ahora (v1.5) | Mejora |
+|---------|-------|--------------|--------|
+| `validDni()` | Solo longitud 9 | 8 dígitos + letra | ✅ Formato español |
+| `validPhone()` | Solo 9 dígitos | 9 dígitos empezando 6/7/8/9 | ✅ Teléfonos españoles |
+| `validPrice()` | Cualquier decimal | Máximo 2 decimales | ✅ Formato moneda |
+| `notEmpty()` | ❌ No existía | Valida campos obligatorios | ✨ NUEVO |
 
 **¿Cuándo modificar?**
 - Para añadir nuevas validaciones (ej: email, NIF)
 - Para cambiar reglas de validación existentes
 - Para añadir validaciones de formato específicas
+- Para validar caracteres especiales adicionales
+
+**¿Dónde se usan?**
+- **`ArticleService.addArticle()`** → validDni, validPhone, validCP, notEmpty, validPrice, noForbiddenChars
+- **`ClientService.addClient()`** → validLength, notEmpty, noForbiddenChars
+- **`ArticleService.updateArticle()`** → ✨ NUEVO v1.5
+- **`ClientService.updateClient()`** → ✨ NUEVO v1.5
 
 ---
 

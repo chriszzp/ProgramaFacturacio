@@ -38,10 +38,10 @@ public class GuiUI {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(1300, 800);
         frame.setMinimumSize(new Dimension(1000, 600)); // Tamaño mínimo para mantener diseño elegante
-        frame.setLayout(new BorderLayout());
+        frame.setLayout(new BorderLayout(0, 0)); // Sin gaps
 
         // Container principal
-        JPanel mainContainer = new JPanel(new BorderLayout());
+        JPanel mainContainer = new JPanel(new BorderLayout(0, 0)); // Sin gaps
         mainContainer.setBackground(AppleStyler.BG_LIGHT);
         mainContainer.setBorder(null); // Eliminar cualquier borde
 
